@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memora Caretaker Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/babel-standalone@7.22.5/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    function App() {
+      const [user, setUser] = React.useState(null);
+      const [patientLogs, setPatientLogs] = React.useState([]);
+      const [location, setLocation] = React.useState(null);
+      const [subscription, setSubscription] = React.useState({});
+      const [identity, setIdentity] = React.useState({});
+      const [relatives, setRelatives] = React.useState([]);
+      const [deviceStatus, setDeviceStatus] = React.useState({});
+      const [tasks, setTasks] = React.useState([]);
+      const [alerts, setAlerts] = React.useState([]);
+      const [newTask, setNewTask] = React.useState("");
+      const [newRelative, setNewRelative] = React.useState({ name: "", relation: "", contact: "" });
+
+      // Simulated API calls (replace with actual backend endpoints)
+      React.useEffect(() => {
+        if (user) {
+          fetch('/api/patient-logs').then(res => res.json()).then(setPatientLogs).catch(console.error);
+          fetch('/api/location').then(res => res.json()).then(setLocation).catch(console.error);
+          fetch('/api/subscription').then(res => res.json()).then(setSubscription).catch(console.error);
+          fetch('/api/identity').then(res => res.json()).then(setIdentity).catch(console.error);
+          fetch('/api/relatives').then(res => res.json()).then(setRelatives).catch(console.error);
+          fetch('/api/device-status').then(res => res.json()).then(setDeviceStatus).catch(console.error);
+          fetch('/api/tasks').then(res => res.json()).then(setTasks).catch(console.error);
+          fetch('/api/alerts').then(res => res.json()).then(setAlerts).catch(console.error);
+        }
+      }, [user]);
+
+      // Login/Signup handler
+      const handleAuth = (type, credentials) => {
+        fetch(`/api/${type}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(credentials),
+        })
+          .then(res => res.json())
+          .then(data => setUser(data.user))
+          .catch(console.error);
+      };
+
+      // Add new task
+      const addTask = () => {
+        if (newTask) {
+          fetch('/api/tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ task: newTask }),
+          })
+            .then(res => res.json())
+            .then(task => setTasks([...tasks, task]))
+            .catch(console.error);
+          setNewTask("");
+        }
+      };
+
+      // Add new relative
+      const addRelative = () => {
+        if (newRelative.name && newRelative.relation && newRelative.contact) {
+          fetch('/api/relatives', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newRelative),
+          })
+            .then(res => res.json())
+            .then(relative => setRelatives([...relatives, relative]))
+            .catch(console.error);
+          setNewRelative({ name: "", relation: "", contact: "" });
+        }
+      };
+
+      if (!user) {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-gray-100">
+            <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+              <h1 className="text-2xl font-bold mb-6 text-center">Memora Caretaker Dashboard</h1>
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Username"
+                  className="w-full p-2 border rounded"
+                  id="username"
+                />
+              </div>
+              <div className="mb-4">
+                <input
+                  type="password"
+                  placeholder="Password"
+                  className="w-full p-2 border rounded"
+                  id="password"
+                />
+              </div>
+              <div className="flex justify-between">
+                <button
+                  onClick={() => handleAuth('login', {
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value,
+                  })}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => handleAuth('signup', {
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value,
+                  })}
+                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                >
+                  Signup
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen bg-gray-100 p-4">
+          <h1 className="text-3xl font-bold mb-6 text-center">Memora Caretaker Dashboard</h1>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-2">Patient Logs</h2>
+              <ul className="list-disc pl-5">
+                {patientLogs.map(log => (
+                  <li key={log.id}>{log.time}: {log.event}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-2">Current Location</h2>
+              <p>{location ? `${location.lat}, ${location.lng}` : 'Loading...'}</p>
+              <div id="map" className="h-48 mt-2 bg-gray-200"></div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-2">Subscription</h2>
+              <p>Plan: {subscription.plan || 'N/A'}</p>
+              <p>Status: {subscription.status || 'N/A'}</p>
+              <p>Renewal: {subscription.renewal || 'N/A'}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-2">Digital Identity</h2>
+              <p>Name: {identity.name || 'N/A'}</p>
+              <p>ID: {identity.id || 'N/A'}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-2">Relatives</h2>
+              <ul className="list-disc pl-5">
+                {relatives.map(rel => (
+                  <li key={rel.id}>{rel.name} ({rel.relation}): {rel.contact}</li>
+                ))}
+              </ul>
+              <div className="mt-4">
+                <input
+                  type="text"
+                  placeholder="Name"
+                  className="w-full p-2 border rounded mb-2"
+                  value={newRelative.name}
+                  onChange={e => setNewRelative({ ...newRelative, name: e.target.value })}
+                />
+                <input
+                  type="text"
+                  placeholder="Relation"
+                  className="w-full p-2 border rounded mb-2"
+                  value={newRelative.relation}
+                  onChange={e => setNewRelative({ ...newRelative, relation: e.target.value })}
+                />
+                <input
+                  type="text"
+                  placeholder="Contact"
+                  className="w-full p-2 border rounded mb-2"
+                  value={newRelative.contact}
+                  onChange={e => setNewRelative({ ...newRelative, contact: e.target.value })}
+                />
+                <button
+                  onClick={addRelative}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Add Relative
+                </button>
+              </div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-2">Device Status</h2>
+              <p>Battery: {deviceStatus.battery || 'N/A'}%</p>
+              <p>Charging: {deviceStatus.charging ? 'Yes' : 'No'}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-2">Task Reminders</h2>
+              <ul className="list-disc pl-5">
+                {tasks.map(task => (
+                  <li key={task.id}>{task.task} - {task.time}</li>
+                ))}
+              </ul>
+              <div className="mt-4">
+                <input
+                  type="text"
+                  placeholder="New Task"
+                  className="w-full p-2 border rounded mb-2"
+                  value={newTask}
+                  onChange={e => setNewTask(e.target.value)}
+                />
+                <button
+                  onClick={addTask}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Add Task
+                </button>
+              </div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-2">Alerts</h2>
+              <ul className="list-disc pl-5">
+                {alerts.map(alert => (
+                  <li key={alert.id} className="text-red-500">{alert.message} - {alert.time}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-2">Live Recording</h2>
+              <button className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                Start Recording
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
