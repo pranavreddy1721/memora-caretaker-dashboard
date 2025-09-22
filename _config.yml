@@ -1,0 +1,4 @@
+echo "exclude:\n  - frontend/node_modules/" > _config.yml
+git add _config.yml
+git commit -m "Add _config.yml to exclude node_modules from Jekyll"
+git push origin main
